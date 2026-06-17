@@ -2,6 +2,29 @@
 
 Every entry here is something we hit in production on `jsrefrence-mehwar2.js` or `jsrefrence-v2.js` (or while building the surrounding tooling). Listed by severity (most-likely-to-bite first).
 
+## Verification status (2026-06-17)
+
+Locally testable entries were run through a headless-Chrome harness at [`tests/limits-verification.html`](../tests/limits-verification.html). Re-run any time with:
+
+```sh
+"/c/Program Files/Google/Chrome/Application/chrome.exe" --headless=new --disable-gpu \
+    --virtual-time-budget=2000 --dump-dom \
+    "file:///D:/path/to/skill/tests/limits-verification.html" \
+    | grep -A 12 'TEST RESULTS'
+```
+
+| # | Bug reproduces in current Chrome? | Workaround verified? | Notes |
+|---|---|---|---|
+| 1 — `<salla-html-content>` scripts inert | ✅ yes (plain script via innerHTML stays inert) | ✅ activator+payload executes the IIFE | — |
+| 6 — `aspect-ratio` parent + img `height:100%` | ⚠️ **no longer reproduces in minimal case** | ✅ workaround still correct + safe | Modern Chrome propagates correctly through `<picture>`. Bug was observed in a more complex DOM (sticky/transform ancestor?) — the workaround is still recommended as a defensive default. |
+| 7 — nested flex carousel collapse | ✅ yes (viewport collapses to 310px instead of 600px) | ✅ `width:100%; min-width:100%` fills correctly | — |
+| 8 — `background-image: url(JSON.stringify(...))` | ✅ yes (style attribute terminates early) | ✅ `escAttr()` keeps style intact | — |
+| 10 — 5-redundancy `setupInit` | n/a (algorithmic check) | ✅ fires exactly once across 5 simulated triggers | — |
+| 13 — cart-event debounce | n/a (algorithmic check) | ✅ 3 triggers within 50ms coalesce to 1 render | — |
+| 14 — CSS leak from unscoped rules | ✅ yes (outside button picks up the rule) | ✅ `.ezz-root` scoping blocks the leak | — |
+
+Entries #2, #3, #4, #5, #9, #11, #12, #15 are not locally testable without external services (Salla SDK, Figma API, Android Chrome, mp4 servers) — their workarounds are validated by the production landings where they were originally observed.
+
 ## 1. `<salla-html-content>` makes `<script>` tags inert
 
 **Symptom.** Pasting `<script>(function(){…})();</script>` into a Salla Custom HTML block does nothing. The script is in the DOM (visible in DevTools) but never executes. No console error.
@@ -77,13 +100,13 @@ The page loads behind a login wall but renders at 27% zoom — the inspector pan
 mv Nots-22.m4v Nots-22.mp4
 ```
 
-## 6. `<picture>` + `aspect-ratio` parent doesn't propagate `height: 100%` to `<img>`
+## 6. `<picture>` + `aspect-ratio` parent — height propagation gotcha
 
-**Symptom.** Background image inside an absolute-positioned overlay setup renders at natural size (e.g., 637px) instead of filling its container (1142×1110 expected).
+**Symptom we observed in iteration 5 of mehwar2.** Background image inside an absolute-positioned overlay setup rendered at ~637px instead of filling its 1142×1110 container.
 
-**Reproduction.** Parent has `aspect-ratio: 1142/1110`; child `<picture>` wraps `<img>`; img has `width:100%; height:100%; object-fit:cover`. The `<picture>` element itself doesn't have an explicit `height: 100%`, so the implicit-aspect-ratio container chain breaks the propagation. The img reports `offsetHeight === naturalHeight`.
+**What the harness now shows.** The minimal repro (parent `aspect-ratio: 4/3` → `<picture>` → img `height: 100%; object-fit: cover`) **propagates correctly in current Chrome** — img gets the parent's 300px height as expected. So the standalone bug as I originally described it is either fixed in Chrome 130+ or only triggers with additional conditions (sticky/transform ancestor, source-srcset media query, very specific parent dimensions). The harness assertion fails BAD-side intentionally to flag this.
 
-**Workaround applied in iteration 5 of mehwar2.** Drop `aspect-ratio` on the parent. Let the natural image size drive layout:
+**Workaround is still recommended as a defensive default.** Drop `aspect-ratio` on the parent and let the natural image size drive layout:
 
 ```css
 .parent {

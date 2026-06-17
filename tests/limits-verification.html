@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>known-limits.md — verification harness</title>
+<style>
+    body { font-family: monospace; background: #f7f7f7; color: #111; padding: 20px; margin: 0; }
+    h1 { font-size: 18px; margin: 0 0 16px; }
+    .test { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 14px; margin: 10px 0; }
+    .test h2 { font-size: 14px; margin: 0 0 10px; color: #333; }
+    .row { display: flex; gap: 10px; margin: 8px 0; align-items: flex-start; }
+    .row > div { flex: 1; padding: 8px; border: 1px solid #eee; min-height: 50px; background: #fafafa; }
+    .bad { border-left: 3px solid #d33; }
+    .good { border-left: 3px solid #2a7; }
+    .stage { background: #ffe; padding: 6px; font-size: 11px; color: #444; border-radius: 3px; }
+    #results { background: #111; color: #0f0; padding: 12px; border-radius: 6px; font-size: 12px; white-space: pre; margin-top: 20px; }
+</style>
+</head>
+<body>
+<h1>known-limits.md verification harness</h1>
+
+<!-- ─── Test 1: Activator + payload pattern (limit #1) ────────────────────── -->
+<section class="test" id="t1">
+    <h2>#1 activator+payload survives innerHTML mount</h2>
+    <div class="stage">Simulating &lt;salla-html-content&gt; by setting innerHTML on a div.</div>
+    <div class="row">
+        <div class="bad">
+            <p><b>BAD:</b> plain &lt;script&gt; via innerHTML</p>
+            <div id="t1-bad-host"></div>
+            <p data-test="t1-bad">Result: <span id="t1-bad-result">…</span></p>
+        </div>
+        <div class="good">
+            <p><b>GOOD:</b> activator + payload</p>
+            <div id="t1-good-host"></div>
+            <p data-test="t1-good">Result: <span id="t1-good-result">…</span></p>
+        </div>
+    </div>
+</section>
+
+<!-- ─── Test 6: aspect-ratio parent breaks child height: 100% (limit #6) ─── -->
+<section class="test" id="t6">
+    <h2>#6 aspect-ratio parent breaks child img height propagation</h2>
+    <div class="stage">Both parents are 400px wide. Expected child image rendered height differs.</div>
+    <div class="row">
+        <div class="bad">
+            <p><b>BAD:</b> parent aspect-ratio + img height:100%</p>
+            <div id="t6-bad-parent" style="width:400px; aspect-ratio: 4/3; background:#eef; position:relative;">
+                <picture>
+                    <img id="t6-bad-img" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNDAwIj48cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2ZjYyIvPjwvc3ZnPg==" style="width:100%; height:100%; object-fit:cover; display:block;">
+                </picture>
+            </div>
+            <p data-test="t6-bad">img height: <span id="t6-bad-result">…</span></p>
+        </div>
+        <div class="good">
+            <p><b>GOOD:</b> natural size + height:auto</p>
+            <div id="t6-good-parent" style="width:400px; max-width:400px; background:#efe;">
+                <picture>
+                    <img id="t6-good-img" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MDAiIGhlaWdodD0iNDAwIj48cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2NmYyIvPjwvc3ZnPg==" style="width:100%; height:auto; object-fit:contain; display:block;">
+                </picture>
+            </div>
+            <p data-test="t6-good">img height: <span id="t6-good-result">…</span></p>
+        </div>
+    </div>
+</section>
+
+<!-- ─── Test 7: Carousel flex-basis collapse (limit #7) ─────────────────── -->
+<section class="test" id="t7">
+    <h2>#7 nested flex carousel: viewport/track/slot width</h2>
+    <div class="stage">Outer carousel is 600px wide. Inner viewport should fill it.</div>
+    <div class="row">
+        <div class="bad">
+            <p><b>BAD:</b> no explicit width on nested flex layers</p>
+            <div id="t7-bad" style="width:600px; display:flex;">
+                <div id="t7-bad-viewport" style="overflow:hidden;">
+                    <div id="t7-bad-track" style="display:flex;">
+                        <div id="t7-bad-slot" style="display:flex; gap:10px;">
+                            <div style="flex:0 0 auto; width:150px; height:40px; background:#fcc;">slide</div>
+                            <div style="flex:0 0 auto; width:150px; height:40px; background:#fcc;">slide</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p data-test="t7-bad">viewport width: <span id="t7-bad-result">…</span></p>
+        </div>
+        <div class="good">
+            <p><b>GOOD:</b> width:100%; min-width:100% on each layer</p>
+            <div id="t7-good" style="width:600px; display:flex;">
+                <div id="t7-good-viewport" style="overflow:hidden; width:100%; min-width:100%;">
+                    <div id="t7-good-track" style="display:flex; width:100%; min-width:100%;">
+                        <div id="t7-good-slot" style="display:flex; gap:10px; width:100%; min-width:100%;">
+                            <div style="flex:0 0 auto; width:150px; height:40px; background:#cfc;">slide</div>
+                            <div style="flex:0 0 auto; width:150px; height:40px; background:#cfc;">slide</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p data-test="t7-good">viewport width: <span id="t7-good-result">…</span></p>
+        </div>
+    </div>
+</section>
+
+<!-- ─── Test 8: background-image url quotes (limit #8) ──────────────────── -->
+<section class="test" id="t8">
+    <h2>#8 background-image url with JSON.stringify breaks HTML</h2>
+    <div class="stage">Templating a URL inline. Container is one wrapper; should contain exactly one BAD div and one GOOD div with the right inline style.</div>
+    <div class="row">
+        <div class="bad">
+            <p><b>BAD:</b> JSON.stringify(url) → broken</p>
+            <div id="t8-bad-host"></div>
+            <p data-test="t8-bad">children: <span id="t8-bad-result">…</span></p>
+        </div>
+        <div class="good">
+            <p><b>GOOD:</b> escAttr(url) → clean</p>
+            <div id="t8-good-host"></div>
+            <p data-test="t8-good">children: <span id="t8-good-result">…</span></p>
+        </div>
+    </div>
+</section>
+
+<!-- ─── Test 10: 5-redundancy setupInit ─────────────────────────────────── -->
+<section class="test" id="t10">
+    <h2>#10 setupInit() — fires exactly once across multiple triggers</h2>
+    <div class="stage">Simulated environment fires Salla.onReady + theme::ready + setTimeout in succession.</div>
+    <div data-test="t10">Fired count: <span id="t10-result">…</span> (expect 1)</div>
+</section>
+
+<!-- ─── Test 13: cart event double-fire debounce ─────────────────────────── -->
+<section class="test" id="t13">
+    <h2>#13 cart-event double-fire debounce</h2>
+    <div class="stage">Calling listener 3x within 50ms; should coalesce to 1 render call after 100ms debounce.</div>
+    <div data-test="t13">render() calls: <span id="t13-result">…</span> (expect 1)</div>
+</section>
+
+<!-- ─── Test 14: CSS scope leak ────────────────────────────────────────── -->
+<section class="test" id="t14">
+    <h2>#14 CSS leak — scoped vs unscoped rules</h2>
+    <div class="stage">A button inside .ezz-root and a button OUTSIDE it. With scoped CSS, only the inside one is styled.</div>
+    <style>
+        /* BAD half — leaks: */
+        .t14-bad-zone button.t14-test { padding: 8px 24px; background: tomato; }
+        /* GOOD half — scoped: */
+        .t14-good-zone .ezz-root button.t14-test { padding: 8px 24px; background: limegreen; }
+    </style>
+    <div class="row">
+        <div class="bad t14-bad-zone">
+            <p><b>BAD:</b> unscoped button rule leaks</p>
+            <div class="ezz-root"><button class="t14-test" id="t14-bad-inside">inside</button></div>
+            <button class="t14-test" id="t14-bad-outside">outside</button>
+            <p data-test="t14-bad">outside bg: <span id="t14-bad-result">…</span></p>
+        </div>
+        <div class="good t14-good-zone">
+            <p><b>GOOD:</b> .ezz-root scoped, no leak</p>
+            <div class="ezz-root"><button class="t14-test" id="t14-good-inside">inside</button></div>
+            <button class="t14-test" id="t14-good-outside">outside</button>
+            <p data-test="t14-good">outside bg: <span id="t14-good-result">…</span></p>
+        </div>
+    </div>
+</section>
+
+<pre id="results">running tests…</pre>
+
+<script>
+window.__TEST_RESULTS__ = {};
+
+function escHtml(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+var escAttr = escHtml;
+
+// ─── Test 1: activator pattern survives innerHTML mount ───────────────────
+(function () {
+    var badHost = document.getElementById('t1-bad-host');
+    var goodHost = document.getElementById('t1-good-host');
+
+    // BAD: plain script
+    window.__T1_BAD_RAN__ = false;
+    badHost.innerHTML = '<script>window.__T1_BAD_RAN__ = true; ' +
+        'document.getElementById("t1-bad-host").insertAdjacentHTML("beforeend", "<i>ran!</i>");' +
+        '<\/script>';
+
+    // GOOD: activator + payload
+    window.__T1_GOOD_RAN__ = false;
+    var payload = 'window.__T1_GOOD_RAN__ = true; ' +
+        'document.getElementById("t1-good-host").insertAdjacentHTML("beforeend", "<i>ran!</i>");';
+    goodHost.innerHTML =
+        '<script type="text/x-t1-payload" id="t1-payload">' + payload + '<\/script>' +
+        '<img alt="" src="x" style="display:none" onerror="' +
+        "(function(){" +
+            "var p=document.getElementById('t1-payload');" +
+            "if(!p)return;" +
+            "var s=document.createElement('script');" +
+            "s.textContent=p.textContent;" +
+            "document.head.appendChild(s);" +
+        "})();this.remove();" +
+        '">';
+
+    setTimeout(function () {
+        var badResult = window.__T1_BAD_RAN__;
+        var goodResult = window.__T1_GOOD_RAN__;
+        document.getElementById('t1-bad-result').textContent  = badResult ? 'EXECUTED (unexpected!)' : 'inert (expected — bug reproduced)';
+        document.getElementById('t1-good-result').textContent = goodResult ? 'EXECUTED ✓' : 'inert (workaround failed!)';
+        window.__TEST_RESULTS__.t1 = {
+            bad: { ran: badResult, expected: false, passed: badResult === false },
+            good: { ran: goodResult, expected: true, passed: goodResult === true },
+        };
+    }, 100);
+})();
+
+// ─── Test 6: aspect-ratio parent + child height: 100% ───────────────────
+(function () {
+    setTimeout(function () {
+        var badImg  = document.getElementById('t6-bad-img');
+        var goodImg = document.getElementById('t6-good-img');
+        var badH    = badImg.getBoundingClientRect().height;
+        var goodH   = goodImg.getBoundingClientRect().height;
+        // Parent BAD is 400×300 (4:3 aspect). If propagation worked, img would be 300px.
+        // If broken, img falls back to natural ratio (800×400 → 400×200) = 200px.
+        // Workaround GOOD parent has no aspect — natural ratio of 800×400 → 400×200 = 200px. (Expected.)
+        document.getElementById('t6-bad-result').textContent  = Math.round(badH)  + 'px';
+        document.getElementById('t6-good-result').textContent = Math.round(goodH) + 'px';
+        window.__TEST_RESULTS__.t6 = {
+            bad:  { height: Math.round(badH),  expected: 300, passed: Math.round(badH) !== 300 },  // we EXPECT the bug
+            good: { height: Math.round(goodH), expected: 200, passed: Math.round(goodH) === 200 },
+        };
+    }, 300);  // allow img to lay out
+})();
+
+// ─── Test 7: nested flex carousel ──────────────────────────────────────
+(function () {
+    setTimeout(function () {
+        var badVp  = document.getElementById('t7-bad-viewport');
+        var goodVp = document.getElementById('t7-good-viewport');
+        var badW   = badVp.getBoundingClientRect().width;
+        var goodW  = goodVp.getBoundingClientRect().width;
+        document.getElementById('t7-bad-result').textContent  = Math.round(badW)  + 'px';
+        document.getElementById('t7-good-result').textContent = Math.round(goodW) + 'px';
+        window.__TEST_RESULTS__.t7 = {
+            bad:  { width: Math.round(badW),  expected: 600, passed: Math.round(badW) < 600 },  // EXPECTED collapse
+            good: { width: Math.round(goodW), expected: 600, passed: Math.round(goodW) === 600 },
+        };
+    }, 100);
+})();
+
+// ─── Test 8: background-image url quotes ───────────────────────────────
+(function () {
+    var url = 'https://i.ibb.co/KzpDHTHB/63d8ab4a89c0.webp';
+
+    // BAD: JSON.stringify creates "url("https://...")" — terminates style attr early
+    var badHtml = '<div style="background-image: url(' + JSON.stringify(url) + '); width:100px; height:30px;"></div>';
+    document.getElementById('t8-bad-host').innerHTML = badHtml;
+
+    // GOOD: escAttr stays plain text
+    var goodHtml = '<div style="background-image: url(' + escAttr(url) + '); width:100px; height:30px;"></div>';
+    document.getElementById('t8-good-host').innerHTML = goodHtml;
+
+    setTimeout(function () {
+        var bad  = document.getElementById('t8-bad-host');
+        var good = document.getElementById('t8-good-host');
+        // Bad case: parser breaks; the div may exist but inline style is corrupt OR
+        // children include extra orphan tags
+        var badDiv  = bad.querySelector('div');
+        var goodDiv = good.querySelector('div');
+        var badStyle  = badDiv  ? (badDiv.getAttribute('style')  || '') : '';
+        var goodStyle = goodDiv ? (goodDiv.getAttribute('style') || '') : '';
+        // A clean parse should contain the full URL in the style
+        var badIntact  = badStyle.indexOf(url) !== -1 && !/[<>]/.test(badStyle);
+        var goodIntact = goodStyle.indexOf(url) !== -1 && !/[<>]/.test(goodStyle);
+        document.getElementById('t8-bad-result').textContent  = badIntact  ? 'style intact (unexpected!)' : 'style broken (bug reproduced)';
+        document.getElementById('t8-good-result').textContent = goodIntact ? 'style intact ✓' : 'style broken (workaround failed!)';
+        window.__TEST_RESULTS__.t8 = {
+            bad:  { intact: badIntact,  expected: false, passed: badIntact === false, sample: badStyle.slice(0, 100) },
+            good: { intact: goodIntact, expected: true,  passed: goodIntact === true, sample: goodStyle.slice(0, 100) },
+        };
+    }, 100);
+})();
+
+// ─── Test 10: 5-redundancy setupInit ──────────────────────────────────
+(function () {
+    var fired = false, count = 0;
+    function safe(via) {
+        if (fired) return;
+        fired = true;
+        count++;
+    }
+    // Simulate 5 triggers firing in rapid succession
+    safe('Salla.onReady');
+    safe('theme::ready');
+    safe('DOMContentLoaded');
+    safe('window.load');
+    safe('timeout-3000');
+    setTimeout(function () {
+        document.getElementById('t10-result').textContent = count + (count === 1 ? ' ✓' : ' ✗');
+        window.__TEST_RESULTS__.t10 = { count: count, expected: 1, passed: count === 1 };
+    }, 50);
+})();
+
+// ─── Test 13: debounce coalesces double-fires ──────────────────────────
+(function () {
+    var renderCalls = 0;
+    var renderTimer;
+    function debounced() {
+        clearTimeout(renderTimer);
+        renderTimer = setTimeout(function () { renderCalls++; }, 100);
+    }
+    // Salla fires the event 3 times within 50ms
+    debounced();
+    setTimeout(debounced, 20);
+    setTimeout(debounced, 45);
+    setTimeout(function () {
+        document.getElementById('t13-result').textContent = renderCalls + (renderCalls === 1 ? ' ✓' : ' ✗');
+        window.__TEST_RESULTS__.t13 = { calls: renderCalls, expected: 1, passed: renderCalls === 1 };
+    }, 300);  // 300ms > 100ms debounce + buffer
+})();
+
+// ─── Test 14: CSS scope leak ───────────────────────────────────────────
+(function () {
+    setTimeout(function () {
+        var badInside   = document.getElementById('t14-bad-inside');
+        var badOutside  = document.getElementById('t14-bad-outside');
+        var goodInside  = document.getElementById('t14-good-inside');
+        var goodOutside = document.getElementById('t14-good-outside');
+
+        var badInsideBg   = getComputedStyle(badInside).backgroundColor;
+        var badOutsideBg  = getComputedStyle(badOutside).backgroundColor;
+        var goodInsideBg  = getComputedStyle(goodInside).backgroundColor;
+        var goodOutsideBg = getComputedStyle(goodOutside).backgroundColor;
+
+        // 'tomato' = rgb(255, 99, 71). 'limegreen' = rgb(50, 205, 50).
+        // Default button bg in modern browsers = various, but NOT tomato/limegreen.
+        var badLeaks  = badOutsideBg.includes('255, 99, 71');
+        var goodLeaks = goodOutsideBg.includes('50, 205, 50');
+
+        document.getElementById('t14-bad-result').textContent  = badOutsideBg + (badLeaks  ? ' (LEAKS — bug reproduced)' : ' (no leak — unexpected)');
+        document.getElementById('t14-good-result').textContent = goodOutsideBg + (goodLeaks ? ' (LEAKS — workaround failed!)' : ' (clean ✓)');
+
+        window.__TEST_RESULTS__.t14 = {
+            bad:  { outsideBg: badOutsideBg,  leaked: badLeaks,  expected: true,  passed: badLeaks === true },  // expect leak in BAD
+            good: { outsideBg: goodOutsideBg, leaked: goodLeaks, expected: false, passed: goodLeaks === false },
+        };
+    }, 100);
+})();
+
+// ─── Aggregator ───────────────────────────────────────────────────────
+setTimeout(function () {
+    var lines = ['=== TEST RESULTS ==='];
+    var allPassed = true;
+    var tests = ['t1', 't6', 't7', 't8', 't10', 't13', 't14'];
+    tests.forEach(function (k) {
+        var r = window.__TEST_RESULTS__[k];
+        if (!r) { lines.push(k + ': NO RESULT (not yet finished)'); allPassed = false; return; }
+        if (r.bad && r.good) {
+            var bp = r.bad.passed, gp = r.good.passed;
+            lines.push(k + ':  bad=' + (bp ? 'pass' : 'FAIL') + '  good=' + (gp ? 'pass' : 'FAIL'));
+            if (!bp || !gp) allPassed = false;
+        } else if (typeof r.passed !== 'undefined') {
+            lines.push(k + ':  ' + (r.passed ? 'pass' : 'FAIL'));
+            if (!r.passed) allPassed = false;
+        }
+    });
+    lines.push('');
+    lines.push(allPassed ? '✅ ALL WORKAROUNDS VERIFIED' : '⚠ AT LEAST ONE TEST FAILED');
+    document.getElementById('results').textContent = lines.join('\n');
+    window.__TESTS_DONE__ = true;
+}, 700);
+</script>
+</body>
+</html>
