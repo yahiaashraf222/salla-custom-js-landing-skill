@@ -209,12 +209,31 @@ Cart icon with item-count badge. Useful in a custom nav.
 
 Exposes `.animateToCart(imageEl)` method for fly-to-cart animations.
 
+### `<salla-reviews>` — but as a hidden data source, NOT a visible widget
+
+[Official docs](https://docs.salla.dev/508226m0). Fetches and renders real store reviews. For a custom-design reviews section, **mount it hidden** and DOM-scrape its rendered testimonials, then render in your own card grid. Full pattern in `reviews-harvest-pattern.md`.
+
+```html
+<div data-ezz-reviews-twilight aria-hidden="true">
+    <salla-reviews source="store" limit="20" display-all-link="false"></salla-reviews>
+</div>
+```
+
+| Attribute | Purpose |
+|---|---|
+| `source` | `store` (all store reviews) / `all` / `categories` / `products` / `json` |
+| `source-value` | IDs (comma-separated) or JSON for the chosen source |
+| `limit` | Max reviews to fetch (default 5; bump to 20–30 for filtering) |
+| `display-all-link` | Show/hide the "View all" link |
+
+After hydration the component's DOM contains `.s-reviews-testimonial` cards with `.s-reviews-testimonial__info` (name), `.s-reviews-testimonial__text` (body), `.s-reviews-testimonial__avatar` (image), and `.s-rating-stars-wrapper` + `.s-rating-stars-selected` (stars). The scraper in `reviews-harvest-pattern.md` extracts all of these and filters to only reviews with both a name and non-empty body text.
+
 ## Components we generally avoid
 
 | Component | Why we skip it |
 |---|---|
 | `<salla-rating-stars>` | Read-only static stars; we render inline SVG to match the design exactly |
-| `<salla-comments>` | Threaded review section is too heavy for a marketing landing; use static review cards |
+| `<salla-comments>` | Threaded Q&A section is too heavy for a marketing landing; use static review cards or harvest from `<salla-reviews>` instead |
 | `<salla-quick-buy>` | Same as `<salla-add-product-button quick-buy>` but more rigid; prefer the latter |
 
 ## Render timing caveat

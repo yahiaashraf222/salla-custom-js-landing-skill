@@ -158,36 +158,38 @@ window.salla.user.isLoggedIn();   // boolean
 window.salla.event.dispatch('login::open');
 ```
 
-## Comments / reviews — partial
+## Reviews — `<salla-reviews>` harvest pattern (primary)
 
-The storefront SDK exposes a comments API that DOES work for the comments thread:
+For star-rated customer testimonials displayed in a custom design, **mount `<salla-reviews>` hidden, harvest its rendered DOM, and re-render in your own grid**. This is the proper way; see the full pattern in `reviews-harvest-pattern.md`.
+
+```html
+<div data-ezz-reviews-twilight data-timeout="3500" aria-hidden="true">
+    <salla-reviews source="store" limit="20" display-all-link="false"></salla-reviews>
+</div>
+<div data-ezz-reviews-grid data-page-size="3"></div>
+```
+
+```js
+// In bindBehaviors():
+hydrateReviewsFromTwilight();
+// → polls for .hydrated + .s-reviews-testimonial children, scrapes name/text/stars/avatar,
+//   filters to .filter(i => !!i.text), renders your custom card grid, hides the Salla slider.
+```
+
+The `<salla-reviews>` component supports `source="store" | "all" | "categories" | "products" | "json"` — start with `"store"` for a generic landing.
+
+## Comments — `salla.comment.api.fetchComments` (for product Q&A)
+
+Different data, different use case. Use this for the product comment thread (questions + replies, no star rating):
 
 ```js
 window.salla.comment.api.fetchComments({ product_id: 1004099572, per_page: 12 })
     .then(function (res) {
-        // res.data = [{ id, name, body, rating, created_at, … }, …]
-    })
-    .catch(function () {
-        // Fallback to static reviews — see reviews limit in known-limits.md
+        // res.data = [{ id, name, body, created_at, replies, … }, …]
     });
 ```
 
-**Known limit**: there is no `/store/v1/feedbacks` reviews-listing endpoint anymore (returns 410). For a reviews carousel:
-
-1. Try `salla.comment.api.fetchComments` first.
-2. If it rejects (or returns empty on a brand-new product), render a hard-coded 12-card static fallback — that's what we do in mehwar2.
-
-```js
-function initDynamicReviews() {
-    if (!window.salla || !window.salla.comment || !window.salla.comment.api) return;
-    window.salla.comment.api.fetchComments({ product_id: PRODUCT_ID, per_page: 12 })
-        .then(function (res) {
-            var items = (res && res.data) || [];
-            if (items.length) replaceReviewsCarousel(items);
-        })
-        .catch(function () { /* keep static fallback */ });
-}
-```
+Do NOT use this when you want star testimonials — the response has no rating field. Use the `<salla-reviews>` harvest pattern instead.
 
 ## Rating
 

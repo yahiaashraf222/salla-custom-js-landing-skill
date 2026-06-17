@@ -183,7 +183,7 @@ Don't re-learn these from scratch:
 | Limit | Workaround |
 |---|---|
 | `<salla-html-content>` renders via `innerHTML` → `<script>` tags inert | The **activator + payload** pattern (see `references/activator-pattern.md`) |
-| Salla storefront has **no public reviews-listing API** — `/store/v1/feedbacks` returns 410 | Use static fallback reviews OR `salla.comment.api.fetchComments({product_id, per_page})` (works for the comments thread; reviews-summary endpoint is gone) |
+| `/store/v1/feedbacks` returns 410 — no clean JSON endpoint for store reviews | Mount **`<salla-reviews>`** hidden, poll for hydration, DOM-scrape testimonials, filter to `!!text`, render in your own design (see `references/reviews-harvest-pattern.md`). `salla.comment.api.fetchComments` is for product Q&A, not star testimonials. |
 | Figma MCP rate limit (~500 req/hour on shared PAT) | After 429, use Playwright on the Figma URL directly (login-walled but readable at 27% zoom); cache responses to `scripts/figma-cache/{nodeId}.json` going forward |
 | jsDelivr unusable for videos (50 MB repo cap + aggressive caching) | Host mp4 on `custom.makaseb.tools/...`; never on GitHub raw / jsDelivr |
 | `.m4v` MIME breaks Android browsers | Rename to `.mp4` before upload, keep the container as-is |
@@ -207,6 +207,7 @@ When working on landing-page custom JS, Read the reference that matches the work
 | Native `<salla-*>` components | `references/native-components.md` |
 | Any kind of slider | `references/carousel.js` |
 | Floating cart panel | `references/mini-cart.md` |
+| Displaying real store reviews in a custom design | `references/reviews-harvest-pattern.md` |
 | Uploading images / videos / WebP | `references/asset-hosting.md` |
 | Playwright test loop | `references/testing-protocol.md` |
 | Anything unexpected | `references/known-limits.md` |

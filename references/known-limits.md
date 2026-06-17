@@ -12,27 +12,36 @@ Every entry here is something we hit in production on `jsrefrence-mehwar2.js` or
 
 **Validated.** Playwright on the live storefront, commit `c91a230` (v2) and current production (mehwar2). Both paste-once files boot reliably.
 
-## 2. No public reviews-listing API
+## 2. Reviews listing — use `<salla-reviews>` harvest, NOT the raw HTTP API
 
-**Symptom.** All calls to `/store/v1/feedbacks` return **HTTP 410 Gone**. The route is deprecated with no documented replacement in the storefront SDK.
+**Symptom.** Trying to GET `/store/v1/feedbacks` returns **HTTP 410 Gone**. There is no clean public JSON endpoint that lists store-wide reviews with ratings.
 
-**What partially works.** `salla.comment.api.fetchComments({product_id, per_page})` returns the comments thread for a product. For a "reviews summary" UI with star ratings and review cards, this is incomplete (no aggregate score, no verified-purchase flag).
+**The real solution — `<salla-reviews>` harvest pattern.** Salla ships an official component (`<salla-reviews>`, [docs](https://docs.salla.dev/508226m0)) that DOES fetch real store reviews. Mount it hidden, wait for it to hydrate, DOM-scrape the testimonials with name/text/stars/avatar, and render them in your own card grid. This is what `jsrefrence-v2.js` does — see the full pattern in `reviews-harvest-pattern.md`.
 
-**Workaround in mehwar2.** Static fallback of 12 hard-coded review cards rendered by default; `initDynamicReviews()` tries `salla.comment.api.fetchComments` and replaces the carousel if it returns data. If the merchant has no comments yet (new product) or the API fails, the static cards stay — visitors see something rather than an empty section.
+**Quick TL;DR:**
 
-```js
-function initDynamicReviews() {
-    if (!window.salla?.comment?.api?.fetchComments) return;
-    window.salla.comment.api.fetchComments({ product_id: PRODUCT_ID, per_page: 12 })
-        .then(function (res) {
-            var items = (res && res.data) || [];
-            if (items.length) replaceReviewsCarousel(items);
-        })
-        .catch(function () { /* keep static fallback */ });
-}
+```html
+<div data-ezz-reviews-twilight data-timeout="3500" aria-hidden="true">
+    <salla-reviews source="store" limit="20" display-all-link="false"></salla-reviews>
+</div>
+<div data-ezz-reviews-grid data-page-size="3"></div>
 ```
 
-**Long-term.** Salla merchant API has a feedback endpoint but it requires the merchant's access token — not callable from the storefront IIFE. If reviews matter, set them up as a Salla content page and embed via iframe, OR commit to the static fallback.
+```js
+// Poll until salla-reviews has .hydrated + .s-reviews-testimonial children;
+// then harvest with cleanText/cleanName scrapers (clone-and-strip the embedded
+// star widgets + name labels), filter for !!i.text, and render in your design.
+hydrateReviewsFromTwilight();
+```
+
+**`salla.comment.api.fetchComments` is a separate tool, not a replacement.** It returns the product Q&A thread (a different data shape — no ratings, no verified-purchase, no store-wide source). Use it when you want a Q&A section, not for star-rated testimonials.
+
+**Static fallback is still worth keeping** for three edge cases:
+1. Merchant has zero published reviews → `harvestTestimonials` returns `[]`.
+2. Brand new store → `salla-reviews` doesn't get `.hydrated` class within 3.5 s.
+3. All reviews are name-only with empty text → the `.filter(i => !!i.text)` drops them.
+
+Render the static fallback hidden by default; `showFallback()` only runs if the harvest timeout fires without data.
 
 ## 3. Figma API rate limit (~500 req/hour on shared PAT)
 
